@@ -17,27 +17,27 @@ define([
             xml.loadXML(carbonHandXML);
         }
 
-        var gameXmlElement = xml.getElementsByTagName('game')[0];
+        var gameXml = xml.getElementsByTagName('game')[0];
 
         var hand = {},
-            handData = gameXmlElement.getAttribute('data');
+            handData = gameXml.getAttribute('data');
 
         var dataStringTableNameRegex = /([A-Z][a-z]+)/;
 
         hand.metadata = {
-            id : gameXmlElement.getAttribute('id'),
-            numHoleCards : gameXmlElement.getAttribute('numholecards'),
-            stakes : gameXmlElement.getAttribute('stakes'),
-            seats : gameXmlElement.getAttribute('seats'),
-            realMoney : gameXmlElement.getAttribute('realmoney'),
-            date : moment(gameXmlElement.getAttribute('starttime'),
+            id : gameXml.getAttribute('id'),
+            numHoleCards : gameXml.getAttribute('numholecards'),
+            stakes : gameXml.getAttribute('stakes'),
+            seats : gameXml.getAttribute('seats'),
+            realMoney : gameXml.getAttribute('realmoney'),
+            date : moment(gameXml.getAttribute('starttime'),
                 'YYYYMMDDHHmmss'),
             tableName : handData.match(dataStringTableNameRegex)[0],
-            version : gameXmlElement.getAttribute('version')
+            version : gameXml.getAttribute('version')
         };
 
         var playersXml =
-            gameXmlElement.getElementsByTagName('players')[0];
+            gameXml.getElementsByTagName('players')[0];
 
         hand.metadata.players = {
             dealer : parseInt(playersXml.getAttribute('dealer')),
@@ -45,11 +45,28 @@ define([
                 function (playerXml) {
                     return {
                         name : playerXml.getAttribute('nickname'),
-                        balance : playerXml.getAttribute('balance'),
+                        balance : parseFloat(playerXml.getAttribute('balance')),
                         dealtIn : playerXml.getAttribute('dealtin') === 'true'
                     };
                 })
         }
+
+        hand.rounds = {};
+        _.each(gameXml.getElementsByTagName('round'), function (round) {
+            var roundId = round.getAttribute('id');
+            hand.rounds[roundId] = {
+                events : []
+            };
+
+            _.each(round.getElementsByTagName('event'), function (event) {
+                hand.rounds[roundId].events.push({
+                    type : event.getAttribute('type'),
+                    timestamp : moment(event.getAttribute('timestamp'), 'x'),
+                    player : parseInt(event.getAttribute('player')),
+                    amount : event.getAttribute('amount')
+                });
+            });
+        });
 
         return hand;
     };

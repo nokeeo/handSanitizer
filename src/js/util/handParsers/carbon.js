@@ -55,7 +55,9 @@ define([
         _.each(gameXml.getElementsByTagName('round'), function (round) {
             var roundId = round.getAttribute('id');
             hand.rounds[roundId] = {
-                events : []
+                events : [],
+                cards : [],
+                winners : []
             };
 
             _.each(round.getElementsByTagName('event'), function (event) {
@@ -66,7 +68,30 @@ define([
                     amount : event.getAttribute('amount')
                 });
             });
+
+            _.each(round.getElementsByTagName('cards'), function (cards) {
+                hand.rounds[roundId].cards.push({
+                    type : cards.getAttribute('type'),
+                    cards : cards.getAttribute('cards').split(','),
+                    player : parseInt(cards.getAttribute('player'))
+                });
+            });
+
+            if (roundId === 'END_OF_GAME' || roundId === 'END_OF_FOLDED_GAME') {
+                _.each(round.getElementsByTagName('winner'), function (winner) {
+                    hand.rounds[roundId].winners.push({
+                        amount : parseFloat(winner.getAttribute('amount')),
+                        uncalled : winner.getAttribute('uncalled') === 'true',
+                        potnumber : parseInt(winner.getAttribute('potnumber')),
+                        player : parseInt(winner.getAttribute('player')),
+                        pottype : winner.getAttribute('pottype'),
+                        hand : winner.getAttribute('hand')
+                    });
+                });
+            }
         });
+
+        
 
         return hand;
     };

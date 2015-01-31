@@ -5,7 +5,7 @@ define([], function () {
         var cssLinkEl = document.createElement('link');
         cssLinkEl.setAttribute('rel', 'stylesheet');
         cssLinkEl.setAttribute('type', 'text/css');
-        cssLinkEl.setAttribute('src', cssFilePath);
+        cssLinkEl.setAttribute('href', cssFilePath);
 
         headEl.appendChild(cssLinkEl);
     };

@@ -17,82 +17,86 @@ define([
             xml.loadXML(carbonHandXML);
         }
 
-        var gameXml = xml.getElementsByTagName('game')[0];
+        var gameXml = xml.getElementsByTagName('game');
+        var hands = [];
 
-        var hand = {},
-            handData = gameXml.getAttribute('data');
+        _.each(gameXml, function (handXml) {
+            var hand = {},
+                handData = handXml.getAttribute('data');
 
-        var dataStringTableNameRegex = /([A-Z][a-z]+)/;
+            var dataStringTableNameRegex = /([A-Z][a-z]+)/;
 
-        hand.metadata = {
-            id : gameXml.getAttribute('id'),
-            numHoleCards : gameXml.getAttribute('numholecards'),
-            stakes : gameXml.getAttribute('stakes'),
-            seats : gameXml.getAttribute('seats'),
-            realMoney : gameXml.getAttribute('realmoney'),
-            date : moment(gameXml.getAttribute('starttime'),
-                'YYYYMMDDHHmmss'),
-            tableName : handData.match(dataStringTableNameRegex)[0],
-            version : gameXml.getAttribute('version')
-        };
-
-        var playersXml =
-            gameXml.getElementsByTagName('players')[0];
-
-        hand.metadata.players = {
-            dealer : parseInt(playersXml.getAttribute('dealer')),
-            seats : _.map(playersXml.getElementsByTagName('player'),
-                function (playerXml) {
-                    return {
-                        name : playerXml.getAttribute('nickname'),
-                        balance : parseFloat(playerXml.getAttribute('balance')),
-                        dealtIn : playerXml.getAttribute('dealtin') === 'true'
-                    };
-                })
-        }
-
-        hand.rounds = {};
-        _.each(gameXml.getElementsByTagName('round'), function (round) {
-            var roundId = round.getAttribute('id');
-            hand.rounds[roundId] = {
-                events : [],
-                cards : [],
-                winners : []
+            hand.metadata = {
+                id : handXml.getAttribute('id'),
+                numHoleCards : handXml.getAttribute('numholecards'),
+                stakes : handXml.getAttribute('stakes'),
+                seats : handXml.getAttribute('seats'),
+                realMoney : handXml.getAttribute('realmoney'),
+                date : moment(handXml.getAttribute('starttime'),
+                    'YYYYMMDDHHmmss'),
+                tableName : handData.match(dataStringTableNameRegex)[0],
+                version : handXml.getAttribute('version')
             };
 
-            _.each(round.getElementsByTagName('event'), function (event) {
-                hand.rounds[roundId].events.push({
-                    type : event.getAttribute('type'),
-                    timestamp : moment(event.getAttribute('timestamp'), 'x'),
-                    player : parseInt(event.getAttribute('player')),
-                    amount : event.getAttribute('amount')
-                });
+            var playersXml =
+                handXml.getElementsByTagName('players')[0];
+
+            hand.metadata.players = {
+                dealer : playersXml.getAttribute('dealer'),
+                seats : {}
+            };
+            _.each(playersXml.getElementsByTagName('player'), function (plyr) {
+                var seat = plyr.getAttribute('seat');
+                hand.metadata.players.seats[seat] = {
+                    name : plyr.getAttribute('nickname'),
+                    balance : parseFloat(plyr.getAttribute('balance')),
+                    dealtIn : plyr.getAttribute('dealtin') === 'true'
+                };
             });
 
-            _.each(round.getElementsByTagName('cards'), function (cards) {
-                hand.rounds[roundId].cards.push({
-                    type : cards.getAttribute('type'),
-                    cards : cards.getAttribute('cards').split(','),
-                    player : parseInt(cards.getAttribute('player'))
-                });
-            });
+            hand.rounds = {};
+            _.each(handXml.getElementsByTagName('round'), function (round) {
+                var roundId = round.getAttribute('id');
+                hand.rounds[roundId] = {
+                    events : [],
+                    cards : [],
+                    winners : []
+                };
 
-            if (roundId === 'END_OF_GAME' || roundId === 'END_OF_FOLDED_GAME') {
-                _.each(round.getElementsByTagName('winner'), function (winner) {
-                    hand.rounds[roundId].winners.push({
-                        amount : parseFloat(winner.getAttribute('amount')),
-                        uncalled : winner.getAttribute('uncalled') === 'true',
-                        potnumber : parseInt(winner.getAttribute('potnumber')),
-                        player : parseInt(winner.getAttribute('player')),
-                        pottype : winner.getAttribute('pottype'),
-                        hand : winner.getAttribute('hand')
+                _.each(round.getElementsByTagName('event'), function (event) {
+                    hand.rounds[roundId].events.push({
+                        type : event.getAttribute('type'),
+                        timestamp : moment(event.getAttribute('timestamp'), 'x'),
+                        player : event.getAttribute('player'),
+                        amount : event.getAttribute('amount')
                     });
                 });
-            }
+
+                _.each(round.getElementsByTagName('cards'), function (cards) {
+                    hand.rounds[roundId].cards.push({
+                        type : cards.getAttribute('type'),
+                        cards : cards.getAttribute('cards').split(','),
+                        player : cards.getAttribute('player')
+                    });
+                });
+
+                if (roundId === 'END_OF_GAME' || roundId === 'END_OF_FOLDED_GAME') {
+                    _.each(round.getElementsByTagName('winner'), function (winner) {
+                        hand.rounds[roundId].winners.push({
+                            amount : parseFloat(winner.getAttribute('amount')),
+                            uncalled : winner.getAttribute('uncalled') === 'true',
+                            potnumber : parseInt(winner.getAttribute('potnumber')),
+                            player : winner.getAttribute('player'),
+                            pottype : winner.getAttribute('pottype'),
+                            hand : winner.getAttribute('hand')
+                        });
+                    });
+                }
+            });
+
+            hands.push(hand);
         });
 
-        
-
-        return hand;
+        return hands;
     };
 });

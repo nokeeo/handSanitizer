@@ -9,6 +9,9 @@ require.config({
         // plugins
         text : 'src/js/plugins/text',
 
+        // stats
+        statsEngine : 'src/js/stats/statisticsEngine',
+
         // utilities
         cssLoader : 'src/js/util/cssLoader',
         sampleHands : 'src/js/sampleData/sampleHands'

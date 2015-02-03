@@ -38,7 +38,7 @@ define([
         _.each(stats, function (statistics, player) {
             calculated[player] = {
                 aggressionFactor : calc.aggroFactor(statistics),
-                agressionFrequency : calc.aggroFrequency(statistics)
+                aggressionFrequency : calc.aggroFrequency(statistics)
             };
         });
 
